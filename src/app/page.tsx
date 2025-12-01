@@ -37,6 +37,7 @@ type LogItem = {
   moneyAfter: number;
   employmentAfter: string | null;
   itemsAfter: string[];
+  companionsAfter: string[];
   event?: LifeEvent;
 };
 
@@ -47,6 +48,7 @@ export default function LifeGamePage() {
   const [money, setMoney] = useState(0);
   const [employment, setEmployment] = useState<string | null>(null);
   const [items, setItems] = useState<string[]>([]);
+  const [companions, setCompanions] = useState<string[]>([]);
   const [log, setLog] = useState<LogItem[]>([]);
   const [turn, setTurn] = useState(0);
   const [finished, setFinished] = useState(false);
@@ -68,7 +70,7 @@ export default function LifeGamePage() {
     // 少しだけ「振っている感」を出すための待ち時間
     await new Promise((resolve) => setTimeout(resolve, 300));
 
-    const dice = Math.floor(Math.random() * 60) + 1;
+    const dice = Math.floor(Math.random() * 600) + 1;
     const nextDay = currentDay + dice;
 
     // 30歳に到達 or 超えたら終了
@@ -91,6 +93,7 @@ export default function LifeGamePage() {
           moneyAfter: money,
           employmentAfter: employment,
           itemsAfter: items,
+          companionsAfter: companions,
           event: undefined,
         },
         ...prev,
@@ -119,21 +122,23 @@ export default function LifeGamePage() {
     let newMoney = money;
     let newEmployment = employment;
     let newItems = [...items];
+    let newCompanions = [...companions];
 
     if (selectedEvent) {
+      // お金
       newMoney += selectedEvent.money;
 
-      // 職就く
+      // 職業：就く
       if (selectedEvent.employment && selectedEvent.employment.trim() !== "") {
         newEmployment = selectedEvent.employment.trim();
       }
 
-      // 職失う
+      // 職業：失う
       if (selectedEvent.unemployment) {
         newEmployment = null;
       }
 
-      // アイテム取得
+      // アイテム：取得
       if (selectedEvent.get && selectedEvent.get.trim() !== "") {
         const itemName = selectedEvent.get.trim();
         if (!newItems.includes(itemName)) {
@@ -141,17 +146,33 @@ export default function LifeGamePage() {
         }
       }
 
-      // アイテム喪失
+      // アイテム：喪失
       if (selectedEvent.lost && selectedEvent.lost.trim() !== "") {
         const lostItem = selectedEvent.lost.trim();
         newItems = newItems.filter((it) => it !== lostItem);
       }
+
+      // 仲間：参加
+      if (selectedEvent.join && selectedEvent.join.trim() !== "") {
+        const friendName = selectedEvent.join.trim();
+        if (!newCompanions.includes(friendName)) {
+          newCompanions.push(friendName);
+        }
+      }
+
+      // 仲間：離脱
+      if (selectedEvent.leave && selectedEvent.leave.trim() !== "") {
+        const leaveName = selectedEvent.leave.trim();
+        newCompanions = newCompanions.filter((c) => c !== leaveName);
+      }
     }
 
+    // state 反映
     setCurrentDay(updatedDay);
     setMoney(newMoney);
     setEmployment(newEmployment);
     setItems(newItems);
+    setCompanions(newCompanions); // ← 追加
     setTurn((t) => t + 1);
 
     setLog((prev) => [
@@ -164,6 +185,7 @@ export default function LifeGamePage() {
         moneyAfter: newMoney,
         employmentAfter: newEmployment,
         itemsAfter: newItems,
+        companionsAfter: newCompanions, // ← 追加
         event: selectedEvent,
       },
       ...prev,
@@ -177,6 +199,7 @@ export default function LifeGamePage() {
     setMoney(0);
     setEmployment(null);
     setItems([]);
+    setCompanions([]);
     setLog([]);
     setTurn(0);
     setFinished(false);
@@ -221,16 +244,36 @@ export default function LifeGamePage() {
                     {employment ?? "（なし）"}
                   </Box>
                 </Typography>
+
+                {/* アイテム */}
                 <Stack direction="row" spacing={1} alignItems="center">
                   <Typography>アイテム:</Typography>
                   {items.length === 0 ? (
                     <Typography color="text.secondary">（なし）</Typography>
                   ) : (
                     items.map((item) => (
-                      <Chip key={item} label={item} size="small" />
+                      <Chip
+                        key={item}
+                        label={item}
+                        size="small"
+                        color="secondary"
+                      />
                     ))
                   )}
                 </Stack>
+
+                {/* 仲間 */}
+                <Stack direction="row" spacing={1} alignItems="center">
+                  <Typography>仲間:</Typography>
+                  {companions.length === 0 ? (
+                    <Typography color="text.secondary">（なし）</Typography>
+                  ) : (
+                    companions.map((c) => (
+                      <Chip key={c} label={c} size="small" color="primary" />
+                    ))
+                  )}
+                </Stack>
+
                 {finished && (
                   <Typography color="error" fontWeight="bold" mt={1}>
                     30歳に到達しました。ゲーム終了です。
@@ -328,11 +371,12 @@ export default function LifeGamePage() {
                           </Typography>
                         </Stack>
                       }
+                      secondaryTypographyProps={{ component: "div" }} // ← これで <div> ラップにする
                       secondary={
                         <Box mt={1}>
                           <Typography variant="body2">
-                            年齢: {item.ageYears}歳 {item.ageDays}日（
-                            {item.day}日経過）
+                            年齢: {item.ageYears}歳 {item.ageDays}日（{item.day}
+                            日経過）
                           </Typography>
                           <Typography variant="body2">
                             所持金: {item.moneyAfter.toLocaleString()} 円
@@ -346,6 +390,12 @@ export default function LifeGamePage() {
                               ? " （なし）"
                               : " " + item.itemsAfter.join(" / ")}
                           </Typography>
+                          <Typography variant="body2">
+                            仲間:
+                            {item.companionsAfter.length === 0
+                              ? " （なし）"
+                              : " " + item.companionsAfter.join(" / ")}
+                          </Typography>
 
                           {item.event && (
                             <Box mt={1}>
@@ -358,6 +408,8 @@ export default function LifeGamePage() {
                                   ? `+${item.event.money.toLocaleString()} 円`
                                   : `${item.event.money.toLocaleString()} 円`}
                               </Typography>
+
+                              {/* 職変化 */}
                               {item.event.employment &&
                                 item.event.employment.trim() !== "" && (
                                   <Typography variant="body2">
@@ -369,6 +421,8 @@ export default function LifeGamePage() {
                                   職を失いました
                                 </Typography>
                               )}
+
+                              {/* アイテム変化 */}
                               {item.event.get &&
                                 item.event.get.trim() !== "" && (
                                   <Typography variant="body2">
@@ -379,6 +433,20 @@ export default function LifeGamePage() {
                                 item.event.lost.trim() !== "" && (
                                   <Typography variant="body2">
                                     失ったアイテム: {item.event.lost.trim()}
+                                  </Typography>
+                                )}
+
+                              {/* 仲間変化 */}
+                              {item.event.join &&
+                                item.event.join.trim() !== "" && (
+                                  <Typography variant="body2">
+                                    仲間になった: {item.event.join.trim()}
+                                  </Typography>
+                                )}
+                              {item.event.leave &&
+                                item.event.leave.trim() !== "" && (
+                                  <Typography variant="body2">
+                                    離れていった仲間: {item.event.leave.trim()}
                                   </Typography>
                                 )}
                             </Box>
