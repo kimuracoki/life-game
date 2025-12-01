@@ -1,0 +1,54 @@
+{
+  "events": [
+    {
+      "title": "お年玉をもらった",
+      "from": 0,
+      "to": 5,
+      "money": 10000,
+      "get": "お年玉袋",
+      "lost": "",
+      "employment": "",
+      "unemployment": false
+    },
+    {
+      "title": "ゲームソフトを買った",
+      "from": 6,
+      "to": 12,
+      "money": -5000,
+      "get": "ゲームソフト",
+      "lost": "お年玉袋",
+      "employment": "",
+      "unemployment": false
+    },
+    {
+      "title": "アルバイトを始めた",
+      "from": 16,
+      "to": 22,
+      "money": 20000,
+      "get": "",
+      "lost": "",
+      "employment": "アルバイト",
+      "unemployment": false
+    },
+    {
+      "title": "アルバイトをクビになった",
+      "from": 18,
+      "to": 25,
+      "money": -10000,
+      "get": "",
+      "lost": "",
+      "employment": "",
+      "unemployment": true
+    },
+    {
+      "title": "初任給をもらった",
+      "from": 22,
+      "to": 30,
+      "money": 250000,
+      "get": "初任給の明細",
+      "lost": "",
+      "employment": "正社員",
+      "unemployment": false
+    }
+  ]
+}
